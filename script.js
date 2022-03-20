@@ -33,56 +33,30 @@ class Routes {
   }
 
   async refreshRoutes() {
-    this.routes.forEach((route) => {
-      const url = `https://api-v3.mbta.com/vehicles?sort=-speed&filter%5Broute%5D=${route.id}`;
-      fetch(url)
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`Request failed with status ${response.status}`);
-          }
-          return response.json();
-        })
-        .then((data) => {
-          route.clearVehicles();
-          const allTrains = data["data"];
-          allTrains.forEach((train) => {
-            const attributes = train["attributes"];
-            const lat = attributes["latitude"];
-            const long = attributes["longitude"];
-            const bearing = attributes["bearing"];
-            const vehicle = new Vehicle(lat, long, bearing);
-            route.addVehicle(vehicle);
-          });
+    await Promise.all(
+      this.routes.map(async (route) => {
+        const url = `https://api-v3.mbta.com/vehicles?sort=-speed&filter%5Broute%5D=${route.id}`;
+        console.log("Sending request for:", route.id);
+        const response = await fetch(url);
+        console.log("After request for:", route.id);
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        const data = await response.json();
 
-          console.log("Done refresh");
-          console.log(route);
-        })
-        .catch((error) => console.log(error));
-    });
-  }
-
-  async refreshRoutes2() {
-    this.routes.forEach(async (route) => {
-      const url = `https://api-v3.mbta.com/vehicles?sort=-speed&filter%5Broute%5D=${route.id}`;
-      console.log("Sending request for:", route.id);
-      const response = await fetch(url);
-      console.log("After request for:", route.id);
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-      }
-      const data = await response.json();
-
-      route.clearVehicles();
-      const allTrains = data["data"];
-      allTrains.forEach((train) => {
-        const attributes = train["attributes"];
-        const lat = attributes["latitude"];
-        const long = attributes["longitude"];
-        const bearing = attributes["bearing"];
-        const vehicle = new Vehicle(lat, long, bearing);
-        route.addVehicle(vehicle);
-      });
-    });
+        route.clearVehicles();
+        const allTrains = data["data"];
+        allTrains.forEach((train) => {
+          const attributes = train["attributes"];
+          const lat = attributes["latitude"];
+          const long = attributes["longitude"];
+          const bearing = attributes["bearing"];
+          const vehicle = new Vehicle(lat, long, bearing);
+          route.addVehicle(vehicle);
+        });
+      })
+    );
+    console.log("after forEach route");
   }
 }
 
@@ -90,25 +64,39 @@ class RoutesDrawer {
   constructor(map) {
     this.map = map;
     this.idsToVectorSource = {};
+    const { vectorSource, vectorLayer } = this._createVectorSourceLayer(
+      "red",
+      "red",
+      1
+    );
+    this.allVectorSource = vectorSource;
+    this.map.addLayer(vectorLayer);
+  }
+
+  _createVectorSourceLayer(fillColor, strokeColor = "#000000", fillRadius = 5) {
+    const vectorSource = new ol.source.Vector();
+    const vectorLayer = new ol.layer.Vector({
+      source: vectorSource,
+      style: new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: fillRadius,
+          fill: new ol.style.Fill({ color: fillColor }),
+          stroke: new ol.style.Stroke({
+            color: strokeColor,
+            width: 3,
+          }),
+        }),
+      }),
+    });
+    return { vectorSource, vectorLayer };
   }
 
   drawRoutes(routes) {
     routes.forEach((route) => {
       if (!this.idsToVectorSource[route.id]) {
-        const vectorSource = new ol.source.Vector();
-        const vectorLayer = new ol.layer.Vector({
-          source: vectorSource,
-          style: new ol.style.Style({
-            image: new ol.style.Circle({
-              radius: 5,
-              fill: new ol.style.Fill({ color: route.color }),
-              stroke: new ol.style.Stroke({
-                color: "#000000",
-                width: 3,
-              }),
-            }),
-          }),
-        });
+        const { vectorSource, vectorLayer } = this._createVectorSourceLayer(
+          route.color
+        );
         this.idsToVectorSource[route.id] = vectorSource;
         this.map.addLayer(vectorLayer);
       }
@@ -116,9 +104,12 @@ class RoutesDrawer {
       const routeVectorSource = this.idsToVectorSource[route.id];
       routeVectorSource.clear();
       route.vehicles.forEach((vehicle) => {
-        console.log({ vehicle });
+        // console.log({ vehicle });
         const point = ol.proj.fromLonLat([vehicle.longitude, vehicle.latitude]);
         routeVectorSource.addFeature(new ol.Feature(new ol.geom.Point(point)));
+        this.allVectorSource.addFeature(
+          new ol.Feature(new ol.geom.Point(point))
+        );
       });
     });
   }
@@ -149,11 +140,15 @@ async function main() {
   const routesDrawer = new RoutesDrawer(map);
   const routes = new Routes();
   routes.addRoute("Red", "red");
-  routes.addRoute("741", "gray");
+  //   routes.addRoute("741", "gray");
 
-  await routes.refreshRoutes2();
-  //   console.log("here");
-  //   routesDrawer.drawRoutes(routes.routes);
+  await routes.refreshRoutes();
+  routesDrawer.drawRoutes(routes.routes);
+
+  setInterval(async () => {
+    await routes.refreshRoutes();
+    routesDrawer.drawRoutes(routes.routes);
+  }, 5000);
 }
 
 main();
