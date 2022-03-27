@@ -11,8 +11,8 @@ async function main() {
   const predictionTemplate = document.querySelector(".prediction-template");
   const locationContainers = document.querySelector(".location-containers");
 
-  // const url = "https://api-v3.mbta.com/stops?filter%5Broute%5D=Red";
-  const url = "https://api-v3.mbta.com/stops?filter%5Broute%5D=741";
+  const url = "https://api-v3.mbta.com/stops?filter%5Broute%5D=Red";
+  // const url = "https://api-v3.mbta.com/stops?filter%5Broute%5D=741";
   const response = await fetch(url);
   const data = await response.json();
 
