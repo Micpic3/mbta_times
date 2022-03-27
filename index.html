@@ -126,11 +126,11 @@
               }
               let direction = null;
               if (prediction["attributes"]["direction_id"] == "1") {
-                direction = "Inbound";
-                // direction = "Alewife";
+                // direction = "Inbound";
+                direction = "Alewife";
               } else {
-                direction = "Outbound";
-                // direction = "Ashmont/Braintree";
+                // direction = "Outbound";
+                direction = "Ashmont/Braintree";
               }
 
               const arrival_time_epoch = Date.parse(arrival_time);
