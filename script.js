@@ -47,6 +47,7 @@ class Routes {
         route.clearVehicles();
         const allTrains = data["data"];
         allTrains.forEach((train) => {
+          console.log({ train });
           const attributes = train["attributes"];
           const lat = attributes["latitude"];
           const long = attributes["longitude"];
@@ -64,13 +65,6 @@ class RoutesDrawer {
   constructor(map) {
     this.map = map;
     this.idsToVectorSource = {};
-    const { vectorSource, vectorLayer } = this._createVectorSourceLayer(
-      "red",
-      "red",
-      1
-    );
-    this.allVectorSource = vectorSource;
-    this.map.addLayer(vectorLayer);
   }
 
   _createVectorSourceLayer(fillColor, strokeColor = "#000000", fillRadius = 5) {
@@ -107,9 +101,6 @@ class RoutesDrawer {
         // console.log({ vehicle });
         const point = ol.proj.fromLonLat([vehicle.longitude, vehicle.latitude]);
         routeVectorSource.addFeature(new ol.Feature(new ol.geom.Point(point)));
-        this.allVectorSource.addFeature(
-          new ol.Feature(new ol.geom.Point(point))
-        );
       });
     });
   }
@@ -139,8 +130,8 @@ async function main() {
   });
   const routesDrawer = new RoutesDrawer(map);
   const routes = new Routes();
-  routes.addRoute("Red", "red");
-  //   routes.addRoute("741", "gray");
+  // routes.addRoute("Red", "red");
+  routes.addRoute("741", "gray");
 
   await routes.refreshRoutes();
   routesDrawer.drawRoutes(routes.routes);

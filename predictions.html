@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+
+    <style>
+      :root {
+      }
+
+      * {
+        margin: 0;
+        box-sizing: border-box;
+      }
+
+      .all {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .predictions {
+        height: 300px;
+        width: 200px;
+        border: 1px solid black;
+      }
+      .location-containers {
+        width: 100%;
+        border: 1px solid red;
+      }
+      .prediction {
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="all">
+      <div class="predictions">Predictions here.</div>
+      <div class="location-containers"></div>
+    </div>
+    <template class="location-button-template">
+      <button class="location-button"></button>
+    </template>
+
+    <template class="prediction-template">
+      <div class="prediction">
+        <div class="prediction-time"></div>
+        <div class="prediction-direction"></div>
+      </div>
+    </template>
+  </body>
+  <script src="./predictions.js"></script>
+</html>
