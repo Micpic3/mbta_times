@@ -189,7 +189,7 @@
         predictionsDiv.appendChild(newPredictionDiv);
         const intervalID = setInterval(() => {
           const now = Date.now();
-          const eta_millis = arrival_time_epoch - now;
+          const eta_millis = display_time_epoch - now;
           const eta_minutes = millisToMinutesAndSeconds(eta_millis);
           newPredictionTimeDiv.textContent = eta_minutes;
         }, 1000);

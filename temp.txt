@@ -1,0 +1,3 @@
+docker-compose -f .devcontainer/docker-compose.yml build instant-ngp
+xhost local:root
+docker-compose -f .devcontainer/docker-compose.yml run instant-ngp /bin/bash
