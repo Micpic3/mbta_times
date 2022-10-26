@@ -68,6 +68,10 @@
         background-color: #f55673;
         font-weight: bold;
       }
+
+      .selected-train {
+        background-color: #a6c2ed;
+      }
     </style>
   </head>
   <body>
@@ -92,8 +96,42 @@
     </template>
   </body>
   <script>
+    function insertParam(key, value) {
+      key = encodeURIComponent(key);
+      value = encodeURIComponent(value);
+
+      // kvp looks like ['key1=value1', 'key2=value2', ...]
+      var kvp = document.location.search.substr(1).split("&");
+      let i = 0;
+
+      for (; i < kvp.length; i++) {
+        if (kvp[i].startsWith(key + "=")) {
+          let pair = kvp[i].split("=");
+          pair[1] = value;
+          kvp[i] = pair.join("=");
+          break;
+        }
+      }
+
+      if (i >= kvp.length) {
+        kvp[kvp.length] = [key, value].join("=");
+      }
+
+      // can return this or...
+      let params = kvp.join("&");
+
+      // reload page with new params
+      document.location.search = params;
+    }
     const stopIntervalIDs = [];
     const intervalIDs = [];
+
+    let selectedTrainDiv = null;
+    let selectedTrainID = null;
+    {
+      let params = new URL(document.location).searchParams;
+      selectedTrainID = params.get("vehicleID");
+    }
 
     const predictionsDiv = document.querySelector(".predictions");
     const locationButtonTemplate = document.querySelector(
@@ -106,7 +144,6 @@
     const locationContainers = document.querySelector(".location-containers");
 
     async function setPredictions(stopID, lineName) {
-      // console.log(e.target.dataset.stopid);
       // const response = await fetch(
       //   `https://api-v3.mbta.com/predictions?page%5Boffset%5D=0&page%5Blimit%5D=9&filter%5Bstop%5D=${e.target.dataset.stopid}`
       // );
@@ -128,7 +165,6 @@
         clearInterval(intervalID);
       });
       for (const prediction of predictions) {
-        // console.log("Arrival time:", prediction["attributes"]["arrival_time"]);
         // const arrival_time = prediction["attributes"]["arrival_time"];
         const arrival_time = prediction["attributes"]["arrival_time"];
         const departure_time =
@@ -138,7 +174,8 @@
           continue;
         }
 
-        console.log(prediction["attributes"]);
+        const vehicleID = prediction.relationships.vehicle.data.id;
+
         let direction = null;
 
         let direction1 = null;
@@ -176,6 +213,31 @@
         const newPredictionDiv = predictionTemplate.content
           .cloneNode(true)
           .querySelector(".prediction");
+
+        newPredictionDiv.dataset.vehicleid = vehicleID;
+
+        if (selectedTrainID == vehicleID) {
+          if (selectedTrainDiv != null) {
+            selectedTrainDiv.classList.remove("selected-train");
+          }
+          newPredictionDiv.classList.add("selected-train");
+          selectedTrainDiv = newPredictionDiv;
+        }
+
+        newPredictionDiv.addEventListener("click", () => {
+          // window.location.href = window.location.href.split("?")[0] + "?abc";
+          // insertParam("vehicleid", vehicleID);
+          if (selectedTrainDiv != null) {
+            selectedTrainDiv.classList.remove("selected-train");
+          }
+          newPredictionDiv.classList.add("selected-train");
+          selectedTrainDiv = newPredictionDiv;
+          selectedTrainID = vehicleID;
+
+          var newurl =
+            window.location.href.split("?")[0] + `?vehicleID=${vehicleID}`;
+          window.history.pushState({ path: newurl }, "", newurl);
+        });
 
         const newPredictionTimeDiv =
           newPredictionDiv.querySelector(".prediction-time");
