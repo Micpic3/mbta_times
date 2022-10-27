@@ -96,33 +96,6 @@
     </template>
   </body>
   <script>
-    function insertParam(key, value) {
-      key = encodeURIComponent(key);
-      value = encodeURIComponent(value);
-
-      // kvp looks like ['key1=value1', 'key2=value2', ...]
-      var kvp = document.location.search.substr(1).split("&");
-      let i = 0;
-
-      for (; i < kvp.length; i++) {
-        if (kvp[i].startsWith(key + "=")) {
-          let pair = kvp[i].split("=");
-          pair[1] = value;
-          kvp[i] = pair.join("=");
-          break;
-        }
-      }
-
-      if (i >= kvp.length) {
-        kvp[kvp.length] = [key, value].join("=");
-      }
-
-      // can return this or...
-      let params = kvp.join("&");
-
-      // reload page with new params
-      document.location.search = params;
-    }
     const stopIntervalIDs = [];
     const intervalIDs = [];
 
@@ -216,22 +189,18 @@
 
         newPredictionDiv.dataset.vehicleid = vehicleID;
 
+        newPredictionDiv.classList.remove("selected-train");
         if (selectedTrainID == vehicleID) {
-          if (selectedTrainDiv != null) {
-            selectedTrainDiv.classList.remove("selected-train");
-          }
           newPredictionDiv.classList.add("selected-train");
-          selectedTrainDiv = newPredictionDiv;
         }
 
         newPredictionDiv.addEventListener("click", () => {
           // window.location.href = window.location.href.split("?")[0] + "?abc";
           // insertParam("vehicleid", vehicleID);
-          if (selectedTrainDiv != null) {
-            selectedTrainDiv.classList.remove("selected-train");
+          for (const trainDiv of predictionsDiv.children) {
+            trainDiv.classList.remove("selected-train");
           }
           newPredictionDiv.classList.add("selected-train");
-          selectedTrainDiv = newPredictionDiv;
           selectedTrainID = vehicleID;
 
           var newurl =
