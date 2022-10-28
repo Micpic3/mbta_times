@@ -98,8 +98,8 @@
   <script>
     const stopIntervalIDs = [];
     const intervalIDs = [];
+    let currentLocation = null;
 
-    let selectedTrainDiv = null;
     let selectedTrainID = null;
     {
       let params = new URL(document.location).searchParams;
@@ -232,8 +232,11 @@
       const url = `https://api-v3.mbta.com/stops?filter%5Broute%5D=${lineName}`;
       const response = await fetch(url);
       const data = await response.json();
+
       const locations = data["data"];
       locationContainers.textContent = "";
+
+      let closestLocation = getClostestLocation(locations, currentLocation);
 
       for (const location of locations) {
         const locationName = location["attributes"]["name"];
@@ -243,29 +246,57 @@
           .querySelector(".location-button");
         newLocationButton.textContent = locationName;
         newLocationButton.dataset.stopid = location["id"];
-        newLocationButton.addEventListener("click", async (e) => {
-          const allLocationButtons =
-            document.querySelectorAll(".location-button");
-          allLocationButtons.forEach((button) => {
-            button.classList.remove("active");
-          });
-
-          stationNameHeader.innerHTML = newLocationButton.innerHTML;
-          newLocationButton.classList.add("active");
-          stopIntervalIDs.forEach((stopIntervalID) => {
-            clearInterval(stopIntervalID);
-          });
-
-          setPredictions(e.target.dataset.stopid, lineName);
-          stopIntervalIDs.push(
-            setInterval(
-              () => setPredictions(e.target.dataset.stopid, lineName),
-              10000
-            )
-          );
+        newLocationButton.addEventListener("click", (e) => {
+          selectStop(e.target.dataset.stopid, newLocationButton, lineName);
         });
         locationContainers.appendChild(newLocationButton);
+
+        location.button = newLocationButton;
       }
+
+      if (closestLocation) {
+        selectStop(closestLocation.id, closestLocation.button, lineName);
+      }
+    }
+
+    function getClostestLocation(locations, currentLocation) {
+      if (!(currentLocation && locations.length > 0)) {
+        return;
+      }
+      let smallestDistance2 = Infinity;
+      let closestLocation = null;
+      for (const location of locations) {
+        const lat = location["attributes"]["latitude"];
+        const lon = location["attributes"]["longitude"];
+
+        const distance2 =
+          Math.pow(lat - currentLocation.lat, 2) +
+          Math.pow(lon - currentLocation.lon, 2);
+
+        if (distance2 < smallestDistance2) {
+          smallestDistance2 = distance2;
+          closestLocation = location;
+        }
+      }
+      return closestLocation;
+    }
+
+    function selectStop(stopID, newLocationButton, lineName) {
+      const allLocationButtons = document.querySelectorAll(".location-button");
+      allLocationButtons.forEach((button) => {
+        button.classList.remove("active");
+      });
+
+      stationNameHeader.innerHTML = newLocationButton.innerHTML;
+      newLocationButton.classList.add("active");
+      stopIntervalIDs.forEach((stopIntervalID) => {
+        clearInterval(stopIntervalID);
+      });
+
+      setPredictions(stopID, lineName);
+      stopIntervalIDs.push(
+        setInterval(() => setPredictions(stopID, lineName), 10000)
+      );
     }
 
     async function addLineButton(name) {
@@ -295,6 +326,19 @@
       return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
     }
 
+    navigator.geolocation.getCurrentPosition(
+      (s) => {
+        console.log("location success");
+        console.log(s);
+        currentLocation = {};
+        currentLocation["lat"] = s.coords.latitude;
+        currentLocation["lon"] = s.coords.longitude;
+      },
+      (e) => {
+        console.log("location errror");
+        console.log(e);
+      }
+    );
     main();
   </script>
 </html>
