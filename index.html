@@ -125,9 +125,13 @@
         `https://api-v3.mbta.com/predictions?sort=-arrival_time&page%5Boffset%5D=0&page%5Blimit%5D=100&filter%5Bstop%5D=${stopID}`
       );
       const resJSON = await response.json();
+      console.log(resJSON);
       const predictions = resJSON["data"]
         .filter((pred) => {
-          return pred["attributes"]["arrival_time"] != null;
+          return (
+            pred["attributes"]["arrival_time"] != null &&
+            pred["relationships"]["route"]["data"]["id"] == lineName
+          );
         })
         .reverse()
         .slice(0, 10);
